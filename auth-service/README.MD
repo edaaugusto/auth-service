@@ -49,5 +49,3 @@ Use uma ferramenta como o **Postman** ou **Insomnia** para testar os endpoints:
 
 * **Registrar (POST):** `http://localhost:8080/api/auth/register`
 * **Login (POST):** `http://localhost:8080/api/auth/login`
-
-opa
