@@ -50,4 +50,15 @@ Use uma ferramenta como o **Postman** ou **Insomnia** para testar os endpoints:
 * **Registrar (POST):** `http://localhost:8080/api/auth/register`
 * **Login (POST):** `http://localhost:8080/api/auth/login`
 
-opa
+
+
+## ⚠️ Integração com o Projeto Raiz (Projetaí)
+
+**ATENÇÃO:** Ao conectar este serviço ao banco de dados oficial/produção do Projetaí, é **obrigatório** realizar as seguintes alterações para evitar danos ao banco existente:
+
+### 1. Alterar o `application.properties` (Produção)
+Em produção, nunca use `update`. Altere a configuração para apenas validar o esquema:
+
+```properties
+# Garante que o Hibernate NÃO tente alterar a estrutura do banco oficial
+spring.jpa.hibernate.ddl-auto=validate
