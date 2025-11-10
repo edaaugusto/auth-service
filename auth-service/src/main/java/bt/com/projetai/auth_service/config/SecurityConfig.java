@@ -23,9 +23,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Desabilita proteção desnecessária para APIs
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // NÃO guarda sessão (usa Token)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()    // Porta Login: ABERTA
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll() // Porta Registro: ABERTA
-                        .anyRequest().authenticated() // Todas as outras portas: TRANCADAS (exigem token)
+                    // Libera qualquer coisa que comece com "/api/auth/"
+                .requestMatchers("/api/auth/**").permitAll()
+                .anyRequest().authenticated() // Todas as outras portas: TRANCADAS (exigem token)
                 )
                 .build();
 

@@ -1,64 +1,149 @@
-# 🚀 Serviço de Autenticação (`auth-service`)
+# 🚀 Serviço de Autenticação (`auth-service`) - Ecossistema Projetaí
 
-Este é o microserviço responsável pela autenticação e autorização de usuários (registro, login e geração de token JWT) para o ecossistema Projetaí.
+Este microserviço é a autoridade central de identidade para o ecossistema **Projetaí**. Ele é responsável por gerenciar o ciclo de vida de autenticação (registro, login) e autorização via tokens JWT (JSON Web Token).
 
-## 🛠️ Tecnologias Utilizadas
+O serviço foi projetado para ser **stateless** (sem sessão no servidor) e facilmente integrável com diferentes front-ends (Web, Mobile) e outros microserviços.
 
-* Java 17
-* Spring Boot (3.5.7+)
-* Spring Security
-* Spring Data JPA
-* MySQL
-* JSON Web Token (JWT) - via `com.auth0:java-jwt`
+---
 
-## ⚙️ Configuração Obrigatória (Importante!)
+## 🛠️ Tecnologias Principais
 
-Este projeto não contém senhas de banco de dados ou chaves secretas no código. Para executar o serviço localmente, você **precisa** configurar suas próprias credenciais.
+* **Java 17** (LTS)
+* **Spring Boot 3.x**
+* **Spring Security 6** (Autenticação e Criptografia BCrypt)
+* **JWT (Auth0 java-jwt)** (Geração e Validação de Tokens)
+* **Spring Data JPA & Hibernate** (Persistência)
+* **MySQL Driver**
 
-1.  **Crie um Banco MySQL:** Primeiro, crie um banco de dados vazio no seu MySQL local. (ex: `CREATE DATABASE projeteidb;`)
+---
 
-2.  **Configure o `application.properties`:** Abra o arquivo localizado em `src/main/resources/application.properties`.
+## ⚡ Guia de Início Rápido (Desenvolvimento Local)
 
-3.  **Atualize as seguintes linhas** com as suas credenciais locais:
+Siga estes passos para rodar o projeto na sua máquina pela primeira vez.
 
-    ```properties
-    # Altere para o seu usuário (ex: root) e sua senha local do MySQL
-    spring.datasource.username=SEU_USUARIO_AQUI
-    spring.datasource.password=SUA_SENHA_AQUI
+### 1. Pré-requisitos
+* Java 17 instalado.
+* MySQL rodando localmente.
+* Maven (opcional, se usar o wrapper `./mvnw`).
 
-    # Garanta que o nome do banco de dados (ex: projeteidb) está correto na URL
-    spring.datasource.url=jdbc:mysql://localhost:3306/projeteidb
+### 2. Configuração do Banco Local
+Crie um banco de dados vazio para desenvolvimento:
+```sql
+CREATE DATABASE projeteidb;
+3. Configuração de Credenciais
+O projeto não possui senhas comitadas. Crie ou edite o arquivo src/main/resources/application.properties com suas credenciais locais:
 
-    # Altere esta chave para uma frase secreta longa e aleatória
-    # Ela é usada para assinar os tokens JWT
-    api.jwt.secret=SUA_PROPRIA_CHAVE_SECRETA_LONGA_E_ALEATORIA_AQUI
-    ```
+Properties
 
-## 🏃 Como Executar
+# --- Configuração Local (DEV) ---
+server.port=8080
+spring.datasource.url=jdbc:mysql://localhost:3306/projeteidb
+spring.datasource.username=SEU_USER_LOCAL  # ex: root
+spring.datasource.password=SUA_SENHA_LOCAL # ex: 123456
 
-1.  Clone este repositório.
-2.  Configure seu `application.properties` (conforme o passo acima).
-3.  Execute a classe principal `AuthServiceApplication.java` através da sua IDE.
-4.  O serviço estará rodando em `http://localhost:8080`.
+# Em DEV, 'update' cria as tabelas automaticamente. NUNCA usar em produção.
+spring.jpa.hibernate.ddl-auto=update
 
+# Chave para assinar tokens (use qualquer string longa para testes locais)
+api.jwt.secret=CHAVE_SECRETA_DESENVOLVIMENTO_123
+4. Executar
+Rode a classe principal AuthServiceApplication.java via IDE ou terminal:
 
+Bash
 
-## 🔑 Endpoints da API
+./mvnw spring-boot:run
 
-Use uma ferramenta como o **Postman** ou **Insomnia** para testar os endpoints:
+🔌 Guia de Integração (Produção / Projeto Raiz)
+ATENÇÃO EQUIPE: Ao integrar este serviço ao ambiente oficial do Projetaí, as seguintes configurações são OBRIGATÓRIAS.
 
-* **Registrar (POST):** `http://localhost:8080/api/auth/register`
-* **Login (POST):** `http://localhost:8080/api/auth/login`
+1. Conexão com Banco de Dados Existente (Legado)
+O projeto raiz já possui banco de dados. Para evitar perda de dados ou alterações indesejadas no esquema oficial:
 
+REGRA DE OURO: No application.properties de produção, a configuração DEVE ser:
 
+Properties
 
-## ⚠️ Integração com o Projeto Raiz (Projetaí)
-
-**ATENÇÃO:** Ao conectar este serviço ao banco de dados oficial/produção do Projetaí, é **obrigatório** realizar as seguintes alterações para evitar danos ao banco existente:
-
-### 1. Alterar o `application.properties` (Produção)
-Em produção, nunca use `update`. Altere a configuração para apenas validar o esquema:
-
-```properties
-# Garante que o Hibernate NÃO tente alterar a estrutura do banco oficial
+# 'validate' apenas checa se a tabela existe, mas NÃO altera nada.
 spring.jpa.hibernate.ddl-auto=validate
+Mapeamento de Tabela: Se a tabela de usuários no banco raiz tiver outro nome (ex: TB_USUARIO_SISTEMA em vez de users), NÃO altere o código Java. Use anotações na classe model/User.java:
+
+Java
+
+@Entity
+@Table(name = "TB_USUARIO_SISTEMA") // Nome real no banco legado
+public class User implements UserDetails {
+    @Column(name = "DS_EMAIL_LOGIN") // Nome real da coluna
+    private String email;
+    // ...
+}
+
+
+2. Integração com Front-end (CORS)
+Para que o Front-end (React, Angular, Vue, etc.) consiga fazer requisições para este serviço, é necessário liberar a origem dele no CORS.
+
+Vá até a classe config/SecurityConfig.java.
+
+Localize o método corsConfigurationSource().
+
+Adicione a URL de produção do front-end à lista de origens permitidas:
+
+Java
+
+configuration.setAllowedOrigins(List.of(
+    "http://localhost:3000",      // Front em Dev local
+    "http://localhost:5500",      // Front em Dev local (alternativo)
+    "[https://www.projetai.com.br](https://www.projetai.com.br)" // URL OFICIAL DE PRODUÇÃO DO FRONT (Adicionar)
+));
+3. Variáveis de Ambiente (Segurança)
+Em produção, NÃO coloque senhas reais no application.properties. Utilize variáveis de ambiente do servidor ou do container (Docker):
+
+DB_HOST: URL do banco de produção.
+
+DB_USER: Usuário do banco.
+
+DB_PASS: Senha do banco.
+
+JWT_SECRET: A chave mestra real (deve ser longa, complexa e mantida em segredo absoluto).
+
+🔑 Documentação da API (Endpoints)
+1. Registrar Novo Usuário
+Cria um novo login no sistema.
+
+URL: POST /api/auth/register
+
+Body (JSON):
+
+JSON
+
+{
+  "email": "novo.usuario@projetai.com",
+  "password": "senhaSegura123"
+}
+Respostas:
+
+201 Created: Sucesso.
+
+400 Bad Request: Email já existente ou dados inválidos.
+
+2. Login (Autenticação)
+Verifica credenciais e retorna o token de acesso.
+
+URL: POST /api/auth/login
+
+Body (JSON):
+
+JSON
+
+{
+  "email": "usuario@projetai.com",
+  "password": "senhaSegura123"
+}
+Resposta de Sucesso (200 OK):
+
+JSON
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
+}
+Uso do Token: Nas requisições para outros serviços, envie o header: Authorization: Bearer <seu_token_aqui>

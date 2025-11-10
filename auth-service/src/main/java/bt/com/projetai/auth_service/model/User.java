@@ -36,7 +36,7 @@ public class User implements UserDetails { // 6. Integra com a segurança do Spr
 
     @Override
     public String getPassword() {
-        return "";
+       return this.password;
     }
 
     @Override
