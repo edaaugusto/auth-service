@@ -1,4 +1,4 @@
-package bt.com.projetai.auth_service.controller; // <- Ajuste se seu pacote for diferente!
+package bt.com.projetai.auth_service.controller;
 
 import bt.com.projetai.auth_service.dto.LoginDTO;
 import bt.com.projetai.auth_service.dto.RegisterDTO;
@@ -12,30 +12,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController // 1. Diz ao Spring: "Esta classe controla URLs da API"
-@RequestMapping("/api/auth") // 2. Define o endereço base: http://localhost:8080/api/auth
+@RestController
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
-    private AuthService authService; // Injeta nosso Gerente
+    private AuthService authService;
 
-    // --- PORTA DE LOGIN ---
-    // Endereço final: POST http://localhost:8080/api/auth/login
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO loginDTO) {
-        // Chama o gerente para tentar logar
         TokenDTO token = authService.login(loginDTO);
-        // Retorna 200 OK com o token no corpo da resposta
+
+        // --- LOG DE SUCESSO NO LOGIN ---
+        System.out.println("***************** LOGIN REALIZADO: " + loginDTO.email()
+        + "*****************");
+
         return ResponseEntity.ok(token);
     }
 
-    // --- PORTA DE REGISTRO ---
-    // Endereço final: POST http://localhost:8080/api/auth/register
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterDTO registerDTO) {
-        // Chama o gerente para registrar
         authService.register(registerDTO);
-        // Retorna 201 CREATED (sem corpo)
+
+        // --- LOG DE SUCESSO NO REGISTRO ---
+        System.out.println("***************** NOVO USUÁRIO REGISTRADO: " + registerDTO.email() + "*****************");
+
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
